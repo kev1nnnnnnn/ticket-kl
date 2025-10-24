@@ -19,5 +19,5 @@ export default class Categoria extends BaseModel {
   declare updatedAt: DateTime
 
   @hasMany(() => Chamado)
-  declare chamados: any  // 🔹 correto para sua versão
+  declare chamados: any  
 }
