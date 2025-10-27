@@ -27,19 +27,26 @@ export default class ComentariosChamadoController {
   /**
    * Criar novo comentário
    */
-  public async store({ params, request, response }: HttpContext) {
+  public async store({ params, request, response, auth }: HttpContext) {
     if (!params.chamadoId) {
       return response.badRequest({ message: 'chamadoId é obrigatório' })
     }
 
-    const body = request.only(['userId', 'comentario'])
+    // Pega o usuário logado
+    const user = auth.user
+    if (!user) {
+      return response.unauthorized({ message: 'Usuário não logado' })
+    }
+
+    const body = request.only(['comentario'])
     const data: ComentarioData = {
-      userId: Number(body.userId),
+      userId: user.id, // USUÁRIO LOGADO
       comentario: body.comentario,
       chamadoId: Number(params.chamadoId),
     }
 
     const comentario = await ComentarioChamado.create(data)
+    await comentario.preload('usuario') // para já vir com usuário
     return response.created(comentario)
   }
 

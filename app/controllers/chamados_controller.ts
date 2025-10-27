@@ -1,5 +1,7 @@
+import { DateTime } from 'luxon'  
 import type { HttpContext } from '@adonisjs/core/http'
 import Chamado from '../models/chamado.js'
+import ComentarioChamado from '../models/comentario_chamado.js'
 
 export default class ChamadosController {
   
@@ -85,5 +87,35 @@ export default class ChamadosController {
 
     await chamado.delete()
     return response.noContent()
+  }
+
+   /**
+   * Marcar chamado como resolvido
+   */
+
+  public async resolvido({ params, auth, response }: HttpContext) {
+    const chamado = await Chamado.find(params.id)
+    if (!chamado) {
+      return response.notFound({ message: 'Chamado não encontrado' })
+    }
+
+    const user = auth.user
+    if (!user) {
+      return response.unauthorized({ message: 'Usuário não logado' })
+    }
+
+    // Atualiza status e data usando DateTime do Luxon
+    chamado.status = 'resolvido'
+    chamado.closedAt = DateTime.now() 
+    await chamado.save()
+
+    // Adiciona comentário automático
+    await ComentarioChamado.create({
+      userId: user.id,
+      chamadoId: chamado.id,
+      comentario: '[RESOLVIDO]',
+    })
+
+    return response.ok(chamado)
   }
 }
