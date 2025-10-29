@@ -1,19 +1,24 @@
-import { DateTime } from 'luxon'  
+import { DateTime } from 'luxon'
 import type { HttpContext } from '@adonisjs/core/http'
 import Chamado from '../models/chamado.js'
 import ComentarioChamado from '../models/comentario_chamado.js'
 
 export default class ChamadosController {
-  
   /**
-   * Listar todos os chamados
+   * Listar todos os chamados com paginação
    */
-  public async index({}: HttpContext) {
+  public async index({ request }: HttpContext) {
+    const page = request.input('page', 1)
+    const limit = request.input('limit', 10)
+
     const chamados = await Chamado.query()
-      .preload('usuario')      // Carrega dados do usuário que abriu
-      .preload('tecnico')      // Carrega dados do técnico
-      .preload('categoria')    // Carrega categoria
-      .preload('comentarios')  // Carrega comentários
+      .preload('usuario')
+      .preload('tecnico')
+      .preload('categoria')
+      .preload('comentarios')
+      .orderBy('created_at', 'desc')
+      .paginate(page, limit)
+
     return chamados
   }
 
@@ -28,7 +33,7 @@ export default class ChamadosController {
       'prioridade',
       'userId',
       'tecnicoId',
-      'categoriaId'
+      'categoriaId',
     ])
 
     const chamado = await Chamado.create(data)
@@ -50,6 +55,7 @@ export default class ChamadosController {
     if (!chamado) {
       return response.notFound({ message: 'Chamado não encontrado' })
     }
+
     return chamado
   }
 
@@ -69,8 +75,9 @@ export default class ChamadosController {
       'prioridade',
       'tecnicoId',
       'categoriaId',
-      'closedAt'
+      'closedAt',
     ])
+
     chamado.merge(data)
     await chamado.save()
     return chamado
@@ -89,10 +96,9 @@ export default class ChamadosController {
     return response.noContent()
   }
 
-   /**
+  /**
    * Marcar chamado como resolvido
    */
-
   public async resolvido({ params, auth, response }: HttpContext) {
     const chamado = await Chamado.find(params.id)
     if (!chamado) {
@@ -104,12 +110,10 @@ export default class ChamadosController {
       return response.unauthorized({ message: 'Usuário não logado' })
     }
 
-    // Atualiza status e data usando DateTime do Luxon
     chamado.status = 'resolvido'
-    chamado.closedAt = DateTime.now() 
+    chamado.closedAt = DateTime.now()
     await chamado.save()
 
-    // Adiciona comentário automático
     await ComentarioChamado.create({
       userId: user.id,
       chamadoId: chamado.id,
@@ -118,4 +122,77 @@ export default class ChamadosController {
 
     return response.ok(chamado)
   }
+
+  public async filtrar({ request }: HttpContext) {
+    const {
+      status,
+      prioridade,
+      userId,
+      tecnicoId,
+      categoriaId,
+      dataInicio,
+      dataFim,
+      search,
+      page = 1,
+      limit = 10,
+    } = request.only([
+      'status',
+      'prioridade',
+      'userId',
+      'tecnicoId',
+      'categoriaId',
+      'dataInicio',
+      'dataFim',
+      'search',
+      'page',
+      'limit',
+    ]);
+
+    const query = Chamado.query()
+      .preload('usuario')
+      .preload('tecnico')
+      .preload('categoria')
+      .preload('comentarios')
+      .orderBy('created_at', 'desc');
+
+    // Aplicar filtros
+    if (status) {
+      query.where('status', status);
+    }
+
+    if (prioridade) {
+      query.where('prioridade', prioridade);
+    }
+
+    if (userId !== undefined && userId !== null && userId !== '') {
+      query.where('user_id', Number(userId));
+    }
+
+    if (tecnicoId !== undefined && tecnicoId !== null && tecnicoId !== '') {
+      query.where('tecnico_id', Number(tecnicoId));
+    }
+
+    if (categoriaId !== undefined && categoriaId !== null && categoriaId !== '') {
+      query.where('categoria_id', Number(categoriaId));
+    }
+
+    if (dataInicio) {
+      query.where('created_at', '>=', dataInicio);
+    }
+
+    if (dataFim) {
+      query.where('created_at', '<=', dataFim);
+    }
+
+    if (search) {
+      query.andWhere((q) => {
+        q.where('titulo', 'like', `%${search}%`)
+        .orWhere('descricao', 'like', `%${search}%`);
+      });
+    }
+
+    const chamados = await query.paginate(Number(page), Number(limit));
+    return chamados;
+  }
+
 }

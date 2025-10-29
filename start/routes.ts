@@ -8,6 +8,7 @@ import AssumesController from '#controllers/assumes_controller'
 
 // Import do helper de middleware
 import { middleware } from '#start/kernel'
+import DashboardController from '#controllers/dashboard_controller'
 
 router.get('/', async () => {
   return { hello: 'world' }
@@ -25,8 +26,10 @@ router.resource('users', UsersController).use('*', middleware.auth())
 
 router.put('/chamados/:id/resolvido', [ChamadosController, 'resolvido']).use(middleware.auth())
 
+// Filtro de chamados
+router.post('/chamados/filtrar', [ChamadosController, 'filtrar']).use(middleware.auth())
 
-// 💬 Comentários vinculados a um chamado
+// Comentários vinculados a um chamado
 router
   .group(() => {
     router.get('/', [ComentarioChamadoController, 'index'])
@@ -37,3 +40,16 @@ router
 
 // 👨‍🔧 Técnico assume chamado
 router.put('/chamados/:id/assumir', [AssumesController, 'assumir']).use(middleware.auth())
+
+// 🔐 Dashboard protegido
+router
+  .group(() => {
+    router.get('/status', [DashboardController, 'chamadosPorStatus'])
+    router.get('/prioridade', [DashboardController, 'chamadosPorPrioridade'])
+    router.get('/ultimos-7-dias', [DashboardController, 'chamadosUltimos7Dias'])
+    router.get('/tempo-medio', [DashboardController, 'tempoMedioResolucao'])
+    router.get('/resumo', [DashboardController, 'resumoGeral'])
+    router.get('/todos', [DashboardController, 'index'])
+  })
+  .prefix('/dashboard')
+  .use(middleware.auth())

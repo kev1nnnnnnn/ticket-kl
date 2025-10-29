@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import ComentarioChamado from '../models/comentario_chamado.js'
+import ComentarioChamado from '#models/comentario_chamado'
+import { emitNewComment } from '#start/socket'
 
 interface ComentarioData {
   userId: number
@@ -8,7 +9,6 @@ interface ComentarioData {
 }
 
 export default class ComentariosChamadoController {
-
   /**
    * Listar todos os comentários de um chamado específico
    */
@@ -25,28 +25,38 @@ export default class ComentariosChamadoController {
   }
 
   /**
-   * Criar novo comentário
+   * Criar novo comentário e emitir via Socket.IO
    */
   public async store({ params, request, response, auth }: HttpContext) {
     if (!params.chamadoId) {
       return response.badRequest({ message: 'chamadoId é obrigatório' })
     }
 
-    // Pega o usuário logado
     const user = auth.user
     if (!user) {
       return response.unauthorized({ message: 'Usuário não logado' })
     }
 
     const body = request.only(['comentario'])
+
     const data: ComentarioData = {
-      userId: user.id, // USUÁRIO LOGADO
+      userId: user.id,
       comentario: body.comentario,
       chamadoId: Number(params.chamadoId),
     }
 
     const comentario = await ComentarioChamado.create(data)
-    await comentario.preload('usuario') // para já vir com usuário
+    await comentario.load('usuario')
+
+    // ✅ Emite o evento Socket.IO para todos os clientes conectados
+    emitNewComment({
+      id: comentario.id,
+      comentario: comentario.comentario,
+      chamadoId: comentario.chamadoId,
+      createdAt: comentario.createdAt,
+      usuario: comentario.usuario,
+    })
+
     return response.created(comentario)
   }
 

@@ -3,6 +3,7 @@ import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import User from './user.js'
 import Categoria from './categoria.js'
 import ComentarioChamado from './comentario_chamado.js'
+import db from '@adonisjs/lucid/services/db'
 
 export default class Chamado extends BaseModel {
   @column({ isPrimary: true })
@@ -50,4 +51,56 @@ export default class Chamado extends BaseModel {
 
   @hasMany(() => ComentarioChamado)
   declare comentarios: any
+
+  /**
+   * 🔹 Chamados agrupados por status
+   */
+  public static async porStatus() {
+    return db.from('chamados').select('status').count('* as total').groupBy('status')
+  }
+
+  /**
+   * 🔹 Chamados agrupados por prioridade
+   */
+  public static async porPrioridade() {
+    return db.from('chamados').select('prioridade').count('* as total').groupBy('prioridade')
+  }
+
+  /**
+   * 🔹 Chamados nos últimos X dias
+   */
+  public static async ultimosDias(dias: number) {
+    const data = DateTime.now().minus({ days: dias }).toSQLDate()
+    return db
+      .from('chamados')
+      .select(db.raw('DATE(created_at) as data'))
+      .count('* as total')
+      .where('created_at', '>=', data)
+      .groupByRaw('DATE(created_at)')
+      .orderBy('data', 'asc')
+  }
+
+  /**
+   * 🔹 Tempo médio de resolução
+   */
+  public static async tempoMedioResolucao() {
+    const resultado = await db
+      .from('chamados')
+      .whereNotNull('closed_at')
+      .select(db.raw('AVG(TIMESTAMPDIFF(HOUR, created_at, closed_at)) as media_horas'))
+      .first()
+    
+    return Number(resultado?.media_horas ?? 0).toFixed(1)
+  }
+
+  /**
+   * 🔹 Retorna todos os chamados com relacionamentos
+   */
+  public static async todosComRelacionamentos() {
+    return this.query()
+      .preload('usuario')
+      .preload('tecnico')
+      .preload('categoria')
+      .preload('comentarios')
+  }
 }
