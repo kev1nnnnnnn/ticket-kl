@@ -15,6 +15,7 @@ import ContratoesController from '#controllers/contratoes_controller'
 import TesteEmailController from '#controllers/teste_emails_controller'
 import WhatsAppController from '#controllers/whatsapps_controller'
 import OrdemDeServicosController from '#controllers/ordem_de_servicos_controller'
+import EmailsController from '#controllers/teste_emails_controller'
 
 router.get('/', async () => {
   return { hello: 'world' }
@@ -103,5 +104,14 @@ router
   .use(middleware.auth())
 
 
-router.post('/enviar-email', [TesteEmailController, 'enviar'])
+router
+  .group(() => {
+    router.post('/enviar', [EmailsController, 'enviar'])
+    router.get('/logs', [EmailsController, 'index'])
+    router.get('/logs/:id', [EmailsController, 'show'])
+    router.delete('/logs/:id', [EmailsController, 'destroy'])
+  })
+  .prefix('/emails')
+  .use(middleware.auth())
+  
 router.post('/whatsapp/send', [WhatsAppController, 'send'])
