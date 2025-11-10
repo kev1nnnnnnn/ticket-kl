@@ -2,11 +2,38 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { loginSchema } from '#validators/login_validator'
 import User from '#models/user'
 
+interface RecaptchaResponse {
+  success: boolean
+  challenge_ts?: string
+  hostname?: string
+  'error-codes'?: string[]
+}
+
+
 export default class AuthController {
   public async login({ request, response }: HttpContext) {
     try {
+
+    
       const data = request.all()
-      const fieldErrors = []
+      const fieldErrors: { field: string; message: string }[] = []
+
+    if (!data.recaptchaToken || data.recaptchaToken.trim() === '') {
+        fieldErrors.push({ field: 'recaptcha', message: 'reCAPTCHA é obrigatório' })
+      } else {
+      const secretKey = "6LdKbQQsAAAAAAWVpcMaczF5q84QN9f0hJyQs0hc";
+      const googleRes = await fetch(
+        `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${data.recaptchaToken}`,
+        { method: 'POST' }
+      );
+
+        const googleData = (await googleRes.json()) as RecaptchaResponse
+
+        if (!googleData.success) {
+          fieldErrors.push({ field: 'recaptcha', message: 'reCAPTCHA inválido' })
+        }
+      }
+
 
       // 1 - Campos vazios
       if (!data.email || data.email.trim() === '') {

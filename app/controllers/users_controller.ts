@@ -5,10 +5,17 @@ export default class UsersController {
   /**
    * Listar todos os usuários
    */
-  public async index({}: HttpContext) {
-    const users = await User.all()
-    return users
-  }
+   public async index({ request }: HttpContext) {
+      const page = request.input('page', 1)
+      const limit = request.input('limit', 10)
+
+      const users = await User.query()
+        .orderBy('created_at', 'desc')
+        .paginate(page, limit)
+
+      return users
+    }
+    
 
   /**
    * Criar novo usuário
@@ -56,4 +63,41 @@ export default class UsersController {
     await user.delete()
     return response.noContent()
   }
+
+/**
+   * Filtrar usuários (nome, email, tipo) com paginação
+   */
+  public async filtrar({ request }: HttpContext) {
+    const {
+      fullName,
+      email,
+      tipo,
+      page = 1,
+      limit = 10,
+    } = request.only(['fullName', 'email', 'tipo', 'page', 'limit'])
+
+    const query = User.query().orderBy('created_at', 'desc')
+
+    if (fullName) {
+      query.where('full_name', 'like', `%${fullName}%`)
+    }
+
+    if (email) {
+      query.where('email', 'like', `%${email}%`)
+    }
+
+    if (tipo) {
+      query.where('tipo', tipo)
+    }
+
+    const users = await query.paginate(Number(page), Number(limit))
+    return users
+  }
+
+
+
+
+
+
+
 }

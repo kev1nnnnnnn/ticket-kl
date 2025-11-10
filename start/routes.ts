@@ -9,16 +9,23 @@ import AssumesController from '#controllers/assumes_controller'
 // Import do helper de middleware
 import { middleware } from '#start/kernel'
 import DashboardController from '#controllers/dashboard_controller'
+import ClientesController from '#controllers/clientes_controller'
+import EnderecosController from '#controllers/enderecos_controller'
+import ContratoesController from '#controllers/contratoes_controller'
+import TesteEmailController from '#controllers/teste_emails_controller'
+import WhatsAppController from '#controllers/whatsapps_controller'
+import OrdemDeServicosController from '#controllers/ordem_de_servicos_controller'
 
 router.get('/', async () => {
   return { hello: 'world' }
 })
 
-// 🔐 Login e usuário logado
+// Login e usuário logado
 router.post('/login', [AuthController, 'login'])
 router.get('/me', [AuthController, 'me']).use(middleware.auth())
 
-// 📦 Recursos protegidos
+// Recursos protegidos
+router.get('/users/filtrar', [UsersController, 'filtrar']).use(middleware.auth())
 router.resource('categorias', CategoriaController).use('*', middleware.auth())
 router.resource('chamados', ChamadosController).use('*', middleware.auth())
 router.resource('comentarios-chamados', ComentarioChamadoController).use('*', middleware.auth())
@@ -41,7 +48,7 @@ router
 // 👨‍🔧 Técnico assume chamado
 router.put('/chamados/:id/assumir', [AssumesController, 'assumir']).use(middleware.auth())
 
-// 🔐 Dashboard protegido
+// Dashboard protegido
 router
   .group(() => {
     router.get('/status', [DashboardController, 'chamadosPorStatus'])
@@ -53,3 +60,48 @@ router
   })
   .prefix('/dashboard')
   .use(middleware.auth())
+
+  // Clientes e Endereços
+router
+  .group(() => {
+    router.get('/enderecos/cep', [EnderecosController, 'buscarCep'])
+    router.get('/clientes/filtrar', [ClientesController, 'filtrar'])
+    router.resource('clientes', ClientesController).apiOnly()
+    router.resource('enderecos', EnderecosController).apiOnly()
+  }).use(middleware.auth())
+
+
+
+// Rotas de contratos
+router
+  .group(() => {
+    // Listar todos os contratos (com paginação)
+    router.get('/', [ContratoesController, 'index'])
+
+    // Filtrar contratos
+    router.post('/filtrar', [ContratoesController, 'filtrar'])
+
+    // CRUD completo
+    router.post('/', [ContratoesController, 'store'])
+    router.get('/:id', [ContratoesController, 'show'])
+    router.put('/:id', [ContratoesController, 'update'])
+    router.delete('/:id', [ContratoesController, 'destroy'])
+  })
+  .prefix('/contratos')
+  .use(middleware.auth())
+
+ router
+  .group(() => {
+    router.get('/', [OrdemDeServicosController, 'index'])
+    router.post('/filtrar', [OrdemDeServicosController, 'filtrar'])
+    router.post('/', [OrdemDeServicosController, 'store'])
+    router.get('/:id', [OrdemDeServicosController, 'show'])
+    router.put('/:id', [OrdemDeServicosController, 'update'])
+    router.delete('/:id', [OrdemDeServicosController, 'destroy'])
+  })
+  .prefix('/ordem-de-servicos') 
+  .use(middleware.auth())
+
+
+router.post('/enviar-email', [TesteEmailController, 'enviar'])
+router.post('/whatsapp/send', [WhatsAppController, 'send'])

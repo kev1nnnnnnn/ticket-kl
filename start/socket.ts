@@ -20,7 +20,7 @@ export function initSocket(httpServer: HttpServer) {
     console.log("🔌 Cliente conectado:", socket.id);
 
     socket.on("disconnect", () => {
-      console.log("❌ Cliente desconectou:", socket.id);
+      console.log("Cliente desconectou:", socket.id);
     });
   });
 
@@ -31,5 +31,5 @@ export function initSocket(httpServer: HttpServer) {
 export function emitNewComment(comment: any) {
   if (!io) return;
   io.emit("newComment", comment);
-  console.log("📢 Evento newComment emitido:", comment);
+  console.log(" Evento newComment emitido:", comment);
 }
