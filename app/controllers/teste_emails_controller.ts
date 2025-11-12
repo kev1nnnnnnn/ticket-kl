@@ -1,6 +1,7 @@
 import type { HttpContext } from "@adonisjs/core/http"
 import MailService from "#services/MailService"
 import EmailLog from "#models/email_log"
+import { emailQueue } from "#start/emailQueue"
 
 export default class EmailsController {
   /**
@@ -67,4 +68,35 @@ export default class EmailsController {
     await log.delete()
     return response.ok({ message: "Log removido com sucesso." })
   }
+
+
+
+  /**
+   * Envia um e-mail em massa para vários destinatários
+   */
+   public async enviarEmMassa({ request, response }: HttpContext) {
+    const emails = request.body()
+
+    if (!Array.isArray(emails) || emails.length === 0) {
+      return response.badRequest({ message: 'É necessário fornecer uma lista de destinatários.' })
+    }
+
+    const destinatarios = emails.map(e => e.to).filter(Boolean)
+    const subject = emails[0]?.subject || ''
+    const message = emails[0]?.message || ''
+
+    if (!subject || !message) {
+      return response.badRequest({ message: 'É necessário fornecer assunto e mensagem.' })
+    }
+
+    await emailQueue.add('enviar-em-massa', { destinatarios, subject, message })
+
+    return response.ok({ message: `✅ ${destinatarios.length} e-mails enfileirados para envio.` })
+  }
+
+
+
 }
+
+
+

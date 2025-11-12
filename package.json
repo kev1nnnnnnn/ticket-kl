@@ -8,6 +8,7 @@
     "start": "node bin/server.js",
     "build": "node ace build",
     "dev": "node ace serve --hmr",
+    "worker:email": "node build/start/emailWorker.js",
     "test": "node ace test",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -41,6 +42,7 @@
     "@japa/plugin-adonisjs": "^4.0.0",
     "@japa/runner": "^4.2.0",
     "@swc/core": "1.11.24",
+    "@types/express": "^5.0.5",
     "@types/luxon": "^3.7.1",
     "@types/node": "^22.15.18",
     "@types/nodemailer": "^7.0.3",
@@ -50,6 +52,7 @@
     "pino-pretty": "^13.0.0",
     "prettier": "^3.5.3",
     "ts-node-maintained": "^10.9.5",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "~5.8"
   },
   "dependencies": {
@@ -59,6 +62,9 @@
     "@adonisjs/lucid": "^21.6.1",
     "@vinejs/vine": "^3.0.1",
     "axios": "^1.13.1",
+    "bullmq": "^5.63.0",
+    "express": "^5.1.0",
+    "ioredis": "^5.8.2",
     "luxon": "^3.7.2",
     "mysql2": "^3.15.3",
     "nodemailer": "^7.0.10",

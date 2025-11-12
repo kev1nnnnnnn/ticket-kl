@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Client from '#models/cliente'
-import Endereco from '#models/endereco'
 
 export default class ClientesController {
 

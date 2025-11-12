@@ -12,7 +12,6 @@ import DashboardController from '#controllers/dashboard_controller'
 import ClientesController from '#controllers/clientes_controller'
 import EnderecosController from '#controllers/enderecos_controller'
 import ContratoesController from '#controllers/contratoes_controller'
-import TesteEmailController from '#controllers/teste_emails_controller'
 import WhatsAppController from '#controllers/whatsapps_controller'
 import OrdemDeServicosController from '#controllers/ordem_de_servicos_controller'
 import EmailsController from '#controllers/teste_emails_controller'
@@ -106,6 +105,7 @@ router
 
 router
   .group(() => {
+    router.post('/enviar-massa', [EmailsController, 'enviarEmMassa'])
     router.post('/enviar', [EmailsController, 'enviar'])
     router.get('/logs', [EmailsController, 'index'])
     router.get('/logs/:id', [EmailsController, 'show'])
@@ -113,5 +113,6 @@ router
   })
   .prefix('/emails')
   .use(middleware.auth())
-  
+
+
 router.post('/whatsapp/send', [WhatsAppController, 'send'])

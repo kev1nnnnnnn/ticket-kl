@@ -1,5 +1,4 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import User from '#models/user';
 import Chamado from '#models/chamado';
 
 export default class AssumesController {
